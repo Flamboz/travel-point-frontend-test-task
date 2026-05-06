@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Movie Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            position: relative;
+            z-index: 100; /* Lower than autocomplete elements */
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            z-index: 10000; /* Ensure parent has high z-index */
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            z-index: 10001;
+        }
+
+        /* Advanced Filters */
+        .advanced-filters {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .filters-toggle {
+            background: none;
+            border: none;
+            color: #764ba2;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            transition: color 0.3s ease;
+        }
+
+        .filters-toggle:hover {
+            color: #5a3a7a;
+        }
+
+        .filters-content {
+            display: none; /* Show/hide with toggle */
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .filter-input, .filter-select {
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #764ba2;
+        }
+
+        .checkbox-field label {
+            font-size: 0.95rem;
+            color: #333;
+            cursor: pointer;
+        }
+
+        /* Autocomplete Dropdown */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10002;
+            margin-top: 0.5rem;
+            display: none; /* Show this when user types - connect to API */
+            border: 1px solid rgba(118, 75, 162, 0.2);
+        }
+
+        .autocomplete-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f8f9fe;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-poster {
+            width: 40px;
+            height: 60px;
+            background: #e1e5e9;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .autocomplete-info h4 {
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .autocomplete-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Results Section */
+        .results-section {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            position: relative;
+            z-index: 50; /* Lower than search section and autocomplete */
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .results-count {
+            color: #764ba2;
+            font-weight: 500;
+        }
+
+        /* Movie Grid */
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .movie-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(118, 75, 162, 0.2);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #e1e5e9, #f0f0f0);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Placeholder for movie poster image */
+        .movie-poster::before {
+            content: "🎬";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            opacity: 0.3;
+        }
+
+        .movie-rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(118, 75, 162, 0.9);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .movie-info {
+            padding: 1.5rem;
+        }
+
+        .movie-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .movie-year {
+            color: #764ba2;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .movie-overview {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .movie-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .genre-tag {
+            background: rgba(118, 75, 162, 0.1);
+            color: #764ba2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            display: none; /* Show during API requests */
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: progressMove 2s ease-in-out infinite;
+            width: 0%;
+        }
+
+        @keyframes progressMove {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Skeleton Loading */
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .skeleton-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .skeleton-poster {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        .skeleton-info {
+            padding: 1.5rem;
+        }
+
+        .skeleton-line {
+            height: 20px;
+            background: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-line.title {
+            width: 80%;
+        }
+
+        .skeleton-line.year {
+            width: 30%;
+            height: 16px;
+        }
+
+        .skeleton-line.overview {
+            width: 100%;
+            height: 16px;
+        }
+
+        .skeleton-line.overview:nth-child(4) {
+            width: 90%;
+        }
+
+        .skeleton-line.overview:nth-child(5) {
+            width: 60%;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .search-section, .results-section {
+                padding: 1.5rem;
+            }
+
+            .movies-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <h1>TMDB Movie Search</h1>
+            <p>Find your favorite movies with powerful search and autocomplete</p>
+        </header>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search for movies..."
+                    id="movieSearch"
+                >
+                
+                <!-- Autocomplete Dropdown - Connect to TMDB API for real-time suggestions -->
+                <div class="autocomplete-dropdown" id="autocompleteDropdown">
+                    <!-- Example autocomplete items - replace with API data -->
+                    <div class="autocomplete-item">
+                        <div class="autocomplete-poster"></div>
+                        <div class="autocomplete-info">
+                            <h4>Example Movie Title</h4>
+                            <p>2024 • Action, Adventure</p>
+                        </div>
+                    </div>
+                    <!-- Add more autocomplete items here from API response -->
+                </div>
+            </div>
+
+            <!-- Advanced Filters Section -->
+            <div class="advanced-filters">
+                <button class="filters-toggle" id="filtersToggle">
+                    🔽 Advanced Search Options
+                </button>
+                
+                <div class="filters-content" id="filtersContent">
+                    <div class="filter-field">
+                        <label class="filter-label">Language</label>
+                        <select class="filter-select" id="languageFilter">
+                            <option value="en-US">English (US)</option>
+                            <option value="en-GB">English (UK)</option>
+                            <option value="es-ES">Spanish</option>
+                            <option value="fr-FR">French</option>
+                            <option value="de-DE">German</option>
+                            <option value="it-IT">Italian</option>
+                            <option value="ja-JP">Japanese</option>
+                            <option value="ko-KR">Korean</option>
+                            <option value="zh-CN">Chinese</option>
+                            <!-- TODO: Populate with all TMDB supported languages -->
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Release Year</label>
+                        <input 
+                            type="number" 
+                            class="filter-input" 
+                            placeholder="e.g. 2024"
+                            id="primaryReleaseYear"
+                            min="1900"
+                            max="2030"
+                        >
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Year</label>
+                        <input 
+                            type="number" 
+                            class="filter-input" 
+                            placeholder="e.g. 2024"
+                            id="yearFilter"
+                            min="1900"
+                            max="2030"
+                        >
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Region</label>
+                        <select class="filter-select" id="regionFilter">
+                            <option value="">All Regions</option>
+                            <option value="US">United States</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                            <option value="ES">Spain</option>
+                            <option value="IT">Italy</option>
+                            <option value="JP">Japan</option>
+                            <option value="KR">South Korea</option>
+                            <!-- TODO: Populate with all ISO country codes -->
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Page</label>
+                        <input 
+                            type="number" 
+                            class="filter-input" 
+                            placeholder="1"
+                            id="pageFilter"
+                            min="1"
+                            max="1000"
+                            value="1"
+                        >
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Content Filter</label>
+                        <div class="checkbox-field">
+                            <input 
+                                type="checkbox" 
+                                id="includeAdult"
+                            >
+                            <label for="includeAdult">Include Adult Content</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <!-- Progress Bar - Show during API requests -->
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill"></div>
+            </div>
+            
+            <div class="results-header">
+                <h2 class="results-title">Search Results</h2>
+                <span class="results-count" id="resultsCount">0 movies found</span>
+            </div>
+
+            <!-- Movies Grid - Populate with TMDB API data -->
+            <div class="movies-grid" id="moviesGrid">
+                
+                <!-- Example Movie Cards - Replace with real data from TMDB API -->
+                <div class="movie-card">
+                    <div class="movie-poster">
+                        <!-- Replace with: <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}"> -->
+                        <div class="movie-rating">8.5</div>
+                    </div>
+                    <div class="movie-info">
+                        <h3 class="movie-title">Example Movie Title</h3>
+                        <div class="movie-year">2024</div>
+                        <p class="movie-overview">
+                            This is an example movie overview that would come from the TMDB API. 
+                            Replace this with actual movie.overview from the API response.
+                        </p>
+                        <div class="movie-genres">
+                            <!-- Map through movie.genre_ids and show genre names -->
+                            <span class="genre-tag">Action</span>
+                            <span class="genre-tag">Adventure</span>
+                            <span class="genre-tag">Sci-Fi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add more movie cards here programmatically -->
+                
+            </div>
+
+            <!-- Skeleton Loading - Show while loading -->
+            <div class="skeleton-grid" id="skeletonGrid" style="display: none;">
+                <!-- Example skeleton cards - duplicate as needed -->
+                <div class="skeleton-card">
+                    <div class="skeleton-poster"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line year"></div>
+                        <div class="skeleton-line overview"></div>
+                        <div class="skeleton-line overview"></div>
+                        <div class="skeleton-line overview"></div>
+                    </div>
+                </div>
+                <!-- TODO: Add more skeleton cards programmatically based on expected results -->
+            </div>
+
+            <!-- Loading State - Show while API request is in progress -->
+            <div class="loading" id="loadingState" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Searching for movies...</p>
+            </div>
+
+            <!-- Empty State - Show when no results found -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <h3>No movies found</h3>
+                <p>Try searching with different keywords or check your spelling.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // JavaScript functionality for the movie search
+        // TODO: Implement TMDB API integration
+        
+        // TMDB API Configuration
+        const TMDB_API_KEY = 'YOUR_API_KEY_HERE'; // Replace with actual TMDB API key
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+        // Basic utility functions for UI states (ready to use)
+        const UI = {
+            // Progress bar controls
+            showProgressBar: () => document.getElementById('progressBar').style.display = 'block',
+            hideProgressBar: () => document.getElementById('progressBar').style.display = 'none',
+            
+            // Loading states
+            showSkeleton: () => {
+                document.getElementById('skeletonGrid').style.display = 'grid';
+                document.getElementById('moviesGrid').style.display = 'none';
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+            },
+            
+            showLoading: () => {
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('skeletonGrid').style.display = 'none';
+                document.getElementById('moviesGrid').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+            },
+            
+            showResults: () => {
+                document.getElementById('moviesGrid').style.display = 'grid';
+                document.getElementById('skeletonGrid').style.display = 'none';
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+                UI.hideProgressBar();
+            },
+            
+            showEmptyState: () => {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('moviesGrid').style.display = 'none';
+                document.getElementById('skeletonGrid').style.display = 'none';
+                document.getElementById('loadingState').style.display = 'none';
+                UI.hideProgressBar();
+            },
+            
+            // Advanced filters toggle
+            toggleFilters: () => {
+                const content = document.getElementById('filtersContent');
+                const toggle = document.getElementById('filtersToggle');
+                const isVisible = content.style.display === 'grid';
+                
+                if (isVisible) {
+                    content.style.display = 'none';
+                    toggle.textContent = '🔽 Advanced Search Options';
+                } else {
+                    content.style.display = 'grid';
+                    toggle.textContent = '🔼 Hide Advanced Options';
+                }
+            }
+        };
+
+        // Set up basic filter toggle (ready to use)
+        document.getElementById('filtersToggle').addEventListener('click', UI.toggleFilters);
+
+        // TODO: Get other DOM elements you need
+
+        // TODO: Implement debounce function for search input
+
+        // TODO: Add event listeners for search input
+
+        // TODO: Implement autocomplete functionality
+        
+        // TODO: Implement main search functionality
+        // Example usage of UI states:
+        // UI.showProgressBar();
+        // UI.showSkeleton();
+        // ... make API call ...
+        // UI.showResults();
+
+        // TODO: Display movies in grid
+
+        // TODO: Handle API errors with UI.showEmptyState()
+
+        // TODO: Add movie card click handlers
+    </script>
+</body>
+</html>
