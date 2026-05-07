@@ -73,26 +73,16 @@ const mapMovie = (
     .filter((genreName): genreName is string => Boolean(genreName)),
 })
 
-export async function searchMovies(
+async function fetchMappedMovies(
   query: string,
   signal?: AbortSignal,
 ): Promise<{
   movies: Movie[]
   totalResults: number
 }> {
-  const trimmedQuery = query.trim()
-
-  if (!trimmedQuery) {
-    return { movies: [], totalResults: 0 }
-  }
-
-  if (!TMDB_API_KEY) {
-    throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
-  }
-
   const searchParams = new URLSearchParams({
     api_key: TMDB_API_KEY,
-    query: trimmedQuery,
+    query,
     language: 'en-US',
     page: '1',
     include_adult: 'false',
@@ -114,4 +104,43 @@ export async function searchMovies(
     movies: data.results.map((movie) => mapMovie(movie, genreLookup)),
     totalResults: data.total_results,
   }
+}
+
+export async function searchMovies(
+  query: string,
+  signal?: AbortSignal,
+): Promise<{
+  movies: Movie[]
+  totalResults: number
+}> {
+  const trimmedQuery = query.trim()
+
+  if (!trimmedQuery) {
+    return { movies: [], totalResults: 0 }
+  }
+
+  if (!TMDB_API_KEY) {
+    throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
+  }
+
+  return fetchMappedMovies(trimmedQuery, signal)
+}
+
+export async function searchMovieSuggestions(
+  query: string,
+  signal?: AbortSignal,
+): Promise<Movie[]> {
+  const trimmedQuery = query.trim()
+
+  if (!trimmedQuery) {
+    return []
+  }
+
+  if (!TMDB_API_KEY) {
+    throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
+  }
+
+  const { movies } = await fetchMappedMovies(trimmedQuery, signal)
+
+  return movies.slice(0, 5)
 }
