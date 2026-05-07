@@ -38,9 +38,11 @@ function hasIncompleteYearFilters(filters: SearchFilters): boolean {
 function App() {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS)
+  const [currentPage, setCurrentPage] = useState(1)
   const [movies, setMovies] = useState<Movie[]>([])
   const [suggestions, setSuggestions] = useState<Movie[]>([])
   const [totalResults, setTotalResults] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [isSuggestionsRequestInFlight, setIsSuggestionsRequestInFlight] =
@@ -60,11 +62,13 @@ function App() {
     const trimmedValue = value.trim()
 
     setQuery(value)
+    setCurrentPage(1)
 
     if (!trimmedValue) {
       setMovies([])
       setSuggestions([])
       setTotalResults(0)
+      setTotalPages(0)
       setStatus('idle')
       setErrorMessage('')
       setIsSuggestionsRequestInFlight(false)
@@ -80,6 +84,7 @@ function App() {
     setMovies([])
     setSuggestions([])
     setTotalResults(0)
+    setTotalPages(0)
     setStatus('loading')
     setErrorMessage('')
     setIsSuggestionsRequestInFlight(true)
@@ -87,6 +92,7 @@ function App() {
 
   const handleFiltersChange = (nextFilters: SearchFilters) => {
     setFilters(nextFilters)
+    setCurrentPage(1)
 
     if (!searchQuery) {
       return
@@ -101,9 +107,26 @@ function App() {
     setMovies([])
     setSuggestions([])
     setTotalResults(0)
+    setTotalPages(0)
     setStatus('loading')
     setErrorMessage('')
     setIsSuggestionsRequestInFlight(true)
+  }
+
+  const handlePageChange = (page: number) => {
+    if (
+      page === currentPage ||
+      page < 1 ||
+      (totalPages > 0 && page > totalPages) ||
+      !searchQuery ||
+      hasIncompleteYearFilters(filters)
+    ) {
+      return
+    }
+
+    setCurrentPage(page)
+    setStatus('loading')
+    setErrorMessage('')
   }
 
   const handleMovieOpen = (movieId: number) => {
@@ -223,7 +246,11 @@ function App() {
   useEffect(() => {
     const abortController = new AbortController()
 
-    if (!debouncedSearchQuery || hasIncompleteYearFilters(filters)) {
+    if (
+      !debouncedSearchQuery ||
+      debouncedSearchQuery !== searchQuery ||
+      hasIncompleteYearFilters(filters)
+    ) {
       return
     }
 
@@ -232,11 +259,13 @@ function App() {
         const result = await searchMovies(
           debouncedSearchQuery,
           filters,
+          currentPage,
           abortController.signal,
         )
 
         setMovies(result.movies)
         setTotalResults(result.totalResults)
+        setTotalPages(result.totalPages)
         setStatus('success')
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -245,6 +274,7 @@ function App() {
 
         setMovies([])
         setTotalResults(0)
+        setTotalPages(0)
         setStatus('error')
         setErrorMessage('Something went wrong while loading movies from TMDB.')
       }
@@ -255,7 +285,7 @@ function App() {
     return () => {
       abortController.abort()
     }
-  }, [debouncedSearchQuery, filters])
+  }, [currentPage, debouncedSearchQuery, filters, searchQuery])
 
   return (
     <main className={styles.container}>
@@ -286,8 +316,11 @@ function App() {
         filters={filters}
         status={status}
         totalResults={totalResults}
+        currentPage={currentPage}
+        totalPages={totalPages}
         errorMessage={errorMessage}
         onMovieOpen={handleMovieOpen}
+        onPageChange={handlePageChange}
       />
 
       {selectedMovieId ? (

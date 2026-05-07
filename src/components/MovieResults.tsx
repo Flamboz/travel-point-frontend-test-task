@@ -10,8 +10,11 @@ type MovieResultsProps = {
   filters: SearchFilters
   status: SearchStatus
   totalResults: number
+  currentPage: number
+  totalPages: number
   errorMessage: string
   onMovieOpen: (movieId: number) => void
+  onPageChange: (page: number) => void
 }
 
 function MovieResults({
@@ -20,8 +23,11 @@ function MovieResults({
   filters,
   status,
   totalResults,
+  currentPage,
+  totalPages,
   errorMessage,
   onMovieOpen,
+  onPageChange,
 }: MovieResultsProps) {
   const hasActiveFilters = Boolean(
     filters.primaryReleaseYear ||
@@ -30,12 +36,20 @@ function MovieResults({
       filters.includeAdult ||
       filters.language !== 'en-US',
   )
+  const canPaginate = status === 'success' && totalPages > 1
 
   return (
     <section className={styles.resultsSection}>
       <div className={styles.resultsHeader}>
         <h2 className={styles.resultsTitle}>Search Results</h2>
-        <span className={styles.resultsCount}>{totalResults} movies found</span>
+        <div className={styles.resultsMeta}>
+          <span className={styles.resultsCount}>{totalResults} movies found</span>
+          {canPaginate ? (
+            <span className={styles.pageSummary}>
+              Page {currentPage} of {totalPages}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {status === 'loading' ? (
@@ -82,11 +96,39 @@ function MovieResults({
       ) : null}
 
       {status === 'success' && movies.length > 0 ? (
-        <div className={styles.moviesGrid}>
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} onOpen={onMovieOpen} />
-          ))}
-        </div>
+        <>
+          <div className={styles.moviesGrid}>
+            {movies.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} onOpen={onMovieOpen} />
+            ))}
+          </div>
+
+          {canPaginate ? (
+            <div className={styles.pagination}>
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+
+              <span className={styles.paginationInfo}>
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   )

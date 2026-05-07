@@ -47,6 +47,7 @@ type GenresResponse = {
 type SearchMoviesResponse = {
   results: TmdbMovieResponse[]
   total_results: number
+  total_pages: number
 }
 
 let genreLookupPromise: Promise<Map<number, string>> | null = null
@@ -121,16 +122,18 @@ const mapMovieDetails = (movie: TmdbMovieDetailsResponse): MovieDetails => ({
 async function fetchMappedMovies(
   query: string,
   filters: SearchFilters,
+  page: number,
   signal?: AbortSignal,
 ): Promise<{
   movies: Movie[]
   totalResults: number
+  totalPages: number
 }> {
   const searchParams = new URLSearchParams({
     api_key: TMDB_API_KEY,
     query,
     language: filters.language,
-    page: '1',
+    page: String(page),
     include_adult: String(filters.includeAdult),
   })
 
@@ -161,28 +164,31 @@ async function fetchMappedMovies(
   return {
     movies: data.results.map((movie) => mapMovie(movie, genreLookup)),
     totalResults: data.total_results,
+    totalPages: data.total_pages,
   }
 }
 
 export async function searchMovies(
   query: string,
   filters: SearchFilters,
+  page = 1,
   signal?: AbortSignal,
 ): Promise<{
   movies: Movie[]
   totalResults: number
+  totalPages: number
 }> {
   const trimmedQuery = query.trim()
 
   if (!trimmedQuery) {
-    return { movies: [], totalResults: 0 }
+    return { movies: [], totalResults: 0, totalPages: 0 }
   }
 
   if (!TMDB_API_KEY) {
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  return fetchMappedMovies(trimmedQuery, filters, signal)
+  return fetchMappedMovies(trimmedQuery, filters, page, signal)
 }
 
 export async function searchMovieSuggestions(
@@ -200,7 +206,7 @@ export async function searchMovieSuggestions(
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  const { movies } = await fetchMappedMovies(trimmedQuery, filters, signal)
+  const { movies } = await fetchMappedMovies(trimmedQuery, filters, 1, signal)
 
   return movies.slice(0, 5)
 }
