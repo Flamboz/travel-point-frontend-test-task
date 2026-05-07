@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { getMovieDetails } from '../services/tmdb'
 import type { MovieDetails } from '../types/movie'
 
-function useMovieDetails() {
+type UseMovieDetailsParams = {
+  language: string
+}
+
+function useMovieDetails({ language }: UseMovieDetailsParams) {
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null)
   const [selectedMovie, setSelectedMovie] = useState<MovieDetails | null>(null)
   const [isMovieDetailsLoading, setIsMovieDetailsLoading] = useState(false)
@@ -33,6 +37,7 @@ function useMovieDetails() {
       try {
         const movieDetails = await getMovieDetails(
           selectedMovieId,
+          language,
           abortController.signal,
         )
 
@@ -56,7 +61,7 @@ function useMovieDetails() {
     return () => {
       abortController.abort()
     }
-  }, [selectedMovieId])
+  }, [language, selectedMovieId])
 
   useEffect(() => {
     if (!selectedMovieId) {

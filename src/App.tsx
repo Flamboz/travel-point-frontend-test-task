@@ -35,7 +35,7 @@ function App() {
     movieDetailsError,
     handleMovieOpen,
     handleMovieClose,
-  } = useMovieDetails()
+  } = useMovieDetails({ language: filters.language })
 
   const handleSuggestionSelect = useCallback(
     (movie: Movie) => {

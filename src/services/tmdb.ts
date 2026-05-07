@@ -223,6 +223,7 @@ export async function searchMovieSuggestions(
 
 export async function getMovieDetails(
   movieId: number,
+  language: string,
   signal?: AbortSignal,
 ): Promise<MovieDetails> {
   if (!TMDB_API_KEY) {
@@ -231,7 +232,7 @@ export async function getMovieDetails(
 
   const searchParams = new URLSearchParams({
     api_key: TMDB_API_KEY,
-    language: 'en-US',
+    language,
   })
 
   throwIfAborted(signal)
