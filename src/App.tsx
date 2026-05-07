@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import MovieDetailsModal from './components/MovieDetailsPage'
 import MovieResults from './components/MovieResults'
 import SearchPanel from './components/SearchPanel'
@@ -15,6 +15,9 @@ import type {
   SearchFilters,
   SearchStatus,
 } from './types/movie'
+
+const RECENT_SEARCHES_STORAGE_KEY = 'tmdb-recent-searches'
+const MAX_RECENT_SEARCHES = 8
 
 const DEFAULT_FILTERS: SearchFilters = {
   language: 'en-US',
@@ -35,10 +38,35 @@ function hasIncompleteYearFilters(filters: SearchFilters): boolean {
   )
 }
 
+function getStoredRecentSearches(): string[] {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(RECENT_SEARCHES_STORAGE_KEY)
+
+    if (!storedValue) {
+      return []
+    }
+
+    const parsedValue = JSON.parse(storedValue)
+
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((item): item is string => typeof item === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
 function App() {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS)
   const [currentPage, setCurrentPage] = useState(1)
+  const [recentSearches, setRecentSearches] = useState<string[]>(
+    getStoredRecentSearches,
+  )
   const [movies, setMovies] = useState<Movie[]>([])
   const [suggestions, setSuggestions] = useState<Movie[]>([])
   const [totalResults, setTotalResults] = useState(0)
@@ -57,6 +85,33 @@ function App() {
   const isSuggestionsLoading =
     searchQuery.length > 0 &&
     (debouncedSuggestionsQuery !== searchQuery || isSuggestionsRequestInFlight)
+
+  const addRecentSearch = useCallback((value: string) => {
+    const trimmedValue = value.trim()
+
+    if (trimmedValue.length < 2) {
+      return
+    }
+
+    setRecentSearches((currentSearches) => {
+      const nextSearches = [
+        trimmedValue,
+        ...currentSearches.filter((search) => search !== trimmedValue),
+      ].slice(0, MAX_RECENT_SEARCHES)
+
+      window.localStorage.setItem(
+        RECENT_SEARCHES_STORAGE_KEY,
+        JSON.stringify(nextSearches),
+      )
+
+      return nextSearches
+    })
+  }, [])
+
+  const clearRecentSearches = useCallback(() => {
+    setRecentSearches([])
+    window.localStorage.removeItem(RECENT_SEARCHES_STORAGE_KEY)
+  }, [])
 
   const handleQueryChange = (value: string) => {
     const trimmedValue = value.trim()
@@ -267,6 +322,10 @@ function App() {
         setTotalResults(result.totalResults)
         setTotalPages(result.totalPages)
         setStatus('success')
+
+        if (currentPage === 1) {
+          addRecentSearch(debouncedSearchQuery)
+        }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return
@@ -285,7 +344,7 @@ function App() {
     return () => {
       abortController.abort()
     }
-  }, [currentPage, debouncedSearchQuery, filters, searchQuery])
+  }, [addRecentSearch, currentPage, debouncedSearchQuery, filters, searchQuery])
 
   return (
     <main className={styles.container}>
@@ -302,8 +361,12 @@ function App() {
         suggestions={suggestions}
         isSuggestionsLoading={isSuggestionsLoading}
         filters={filters}
+        recentSearches={recentSearches}
         onQueryChange={handleQueryChange}
+        onRecentSearchSelect={handleQueryChange}
+        onRecentSearchesClear={clearRecentSearches}
         onSuggestionSelect={(movie) => {
+          addRecentSearch(movie.title)
           handleQueryChange(movie.title)
           handleMovieOpen(movie.id)
         }}

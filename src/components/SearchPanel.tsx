@@ -35,7 +35,10 @@ type SearchPanelProps = {
   suggestions: Movie[]
   isSuggestionsLoading: boolean
   filters: SearchFilters
+  recentSearches: string[]
   onQueryChange: (value: string) => void
+  onRecentSearchSelect: (value: string) => void
+  onRecentSearchesClear: () => void
   onSuggestionSelect: (movie: Movie) => void
   onFiltersChange: (filters: SearchFilters) => void
 }
@@ -46,7 +49,10 @@ function SearchPanel({
   suggestions,
   isSuggestionsLoading,
   filters,
+  recentSearches,
   onQueryChange,
+  onRecentSearchSelect,
+  onRecentSearchesClear,
   onSuggestionSelect,
   onFiltersChange,
 }: SearchPanelProps) {
@@ -56,6 +62,8 @@ function SearchPanel({
     isInputFocused &&
     query.trim().length > 0 &&
     (isSuggestionsLoading || suggestions.length > 0)
+  const shouldShowRecentSearches =
+    isInputFocused && query.trim().length === 0 && recentSearches.length > 0
 
   const handleYearInputChange =
     (field: 'primaryReleaseYear' | 'year') =>
@@ -156,6 +164,37 @@ function SearchPanel({
                   )
                 })
               : null}
+          </div>
+        ) : null}
+
+        {shouldShowRecentSearches ? (
+          <div className={styles.recentSearchesDropdown}>
+            <div className={styles.recentSearchesHeader}>
+              <span className={styles.recentSearchesTitle}>Recent searches</span>
+              <button
+                type="button"
+                className={styles.clearRecentSearchesButton}
+                onClick={onRecentSearchesClear}
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className={styles.recentSearchesList}>
+              {recentSearches.map((search) => (
+                <button
+                  key={search}
+                  type="button"
+                  className={styles.recentSearchButton}
+                  onClick={() => {
+                    onRecentSearchSelect(search)
+                    setIsInputFocused(false)
+                  }}
+                >
+                  {search}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
