@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
 import MovieDetailsModal from './components/MovieDetailsPage'
 import MovieResults from './components/MovieResults'
 import SearchPanel from './components/SearchPanel'
@@ -82,6 +83,7 @@ function App() {
   const searchQuery = query.trim()
   const debouncedSuggestionsQuery = useDebouncedValue(searchQuery, 250)
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 400)
+
   const isSuggestionsLoading =
     searchQuery.length > 0 &&
     (debouncedSuggestionsQuery !== searchQuery || isSuggestionsRequestInFlight)
@@ -387,13 +389,20 @@ function App() {
       />
 
       {selectedMovieId ? (
-        <MovieDetailsModal
-          key={selectedMovieId}
-          movie={selectedMovie}
-          isLoading={isMovieDetailsLoading}
-          errorMessage={movieDetailsError}
-          onClose={handleMovieClose}
-        />
+        <ErrorBoundary
+          title="Movie details crashed."
+          message="Close the dialog and open the movie again."
+          actionLabel="Close dialog"
+          onAction={handleMovieClose}
+        >
+          <MovieDetailsModal
+            key={selectedMovieId}
+            movie={selectedMovie}
+            isLoading={isMovieDetailsLoading}
+            errorMessage={movieDetailsError}
+            onClose={handleMovieClose}
+          />
+        </ErrorBoundary>
       ) : null}
     </main>
   )
