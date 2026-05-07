@@ -11,6 +11,7 @@ type MovieResultsProps = {
   status: SearchStatus
   totalResults: number
   errorMessage: string
+  onMovieOpen: (movieId: number) => void
 }
 
 function MovieResults({
@@ -20,6 +21,7 @@ function MovieResults({
   status,
   totalResults,
   errorMessage,
+  onMovieOpen,
 }: MovieResultsProps) {
   const hasActiveFilters = Boolean(
     filters.primaryReleaseYear ||
@@ -82,7 +84,7 @@ function MovieResults({
       {status === 'success' && movies.length > 0 ? (
         <div className={styles.moviesGrid}>
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+            <MovieCard key={movie.id} movie={movie} onOpen={onMovieOpen} />
           ))}
         </div>
       ) : null}

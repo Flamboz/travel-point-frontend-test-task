@@ -36,7 +36,7 @@ type SearchPanelProps = {
   isSuggestionsLoading: boolean
   filters: SearchFilters
   onQueryChange: (value: string) => void
-  onSuggestionSelect: (value: string) => void
+  onSuggestionSelect: (movie: Movie) => void
   onFiltersChange: (filters: SearchFilters) => void
 }
 
@@ -135,7 +135,7 @@ function SearchPanel({
                       type="button"
                       className={styles.autocompleteItem}
                       onClick={() => {
-                        onSuggestionSelect(suggestion.title)
+                        onSuggestionSelect(suggestion)
                         setIsInputFocused(false)
                       }}
                     >
