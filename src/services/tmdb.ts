@@ -1,4 +1,4 @@
-import type { Movie } from '../types/movie'
+import type { Movie, SearchFilters } from '../types/movie'
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -29,6 +29,10 @@ type SearchMoviesResponse = {
 }
 
 let genreLookupPromise: Promise<Map<number, string>> | null = null
+
+function isValidYear(value: string): boolean {
+  return /^\d{4}$/.test(value)
+}
 
 async function getGenreLookup(): Promise<Map<number, string>> {
   if (!genreLookupPromise) {
@@ -75,6 +79,7 @@ const mapMovie = (
 
 async function fetchMappedMovies(
   query: string,
+  filters: SearchFilters,
   signal?: AbortSignal,
 ): Promise<{
   movies: Movie[]
@@ -83,10 +88,22 @@ async function fetchMappedMovies(
   const searchParams = new URLSearchParams({
     api_key: TMDB_API_KEY,
     query,
-    language: 'en-US',
+    language: filters.language,
     page: '1',
-    include_adult: 'false',
+    include_adult: String(filters.includeAdult),
   })
+
+  if (isValidYear(filters.primaryReleaseYear)) {
+    searchParams.set('primary_release_year', filters.primaryReleaseYear)
+  }
+
+  if (isValidYear(filters.year)) {
+    searchParams.set('year', filters.year)
+  }
+
+  if (filters.region) {
+    searchParams.set('region', filters.region)
+  }
 
   const response = await fetch(
     `${TMDB_BASE_URL}/search/movie?${searchParams.toString()}`,
@@ -108,6 +125,7 @@ async function fetchMappedMovies(
 
 export async function searchMovies(
   query: string,
+  filters: SearchFilters,
   signal?: AbortSignal,
 ): Promise<{
   movies: Movie[]
@@ -123,11 +141,12 @@ export async function searchMovies(
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  return fetchMappedMovies(trimmedQuery, signal)
+  return fetchMappedMovies(trimmedQuery, filters, signal)
 }
 
 export async function searchMovieSuggestions(
   query: string,
+  filters: SearchFilters,
   signal?: AbortSignal,
 ): Promise<Movie[]> {
   const trimmedQuery = query.trim()
@@ -140,7 +159,7 @@ export async function searchMovieSuggestions(
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  const { movies } = await fetchMappedMovies(trimmedQuery, signal)
+  const { movies } = await fetchMappedMovies(trimmedQuery, filters, signal)
 
   return movies.slice(0, 5)
 }

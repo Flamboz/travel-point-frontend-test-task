@@ -4,10 +4,30 @@ import SearchPanel from './components/SearchPanel'
 import styles from './App.module.css'
 import useDebouncedValue from './hooks/useDebouncedValue'
 import { searchMovies, searchMovieSuggestions } from './services/tmdb'
-import type { Movie, SearchStatus } from './types/movie'
+import type { Movie, SearchFilters, SearchStatus } from './types/movie'
+
+const DEFAULT_FILTERS: SearchFilters = {
+  language: 'en-US',
+  primaryReleaseYear: '',
+  year: '',
+  region: '',
+  includeAdult: false,
+}
+
+function isCompleteYearOrEmpty(value: string): boolean {
+  return value.length === 0 || /^\d{4}$/.test(value)
+}
+
+function hasIncompleteYearFilters(filters: SearchFilters): boolean {
+  return (
+    !isCompleteYearOrEmpty(filters.primaryReleaseYear) ||
+    !isCompleteYearOrEmpty(filters.year)
+  )
+}
 
 function App() {
   const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS)
   const [movies, setMovies] = useState<Movie[]>([])
   const [suggestions, setSuggestions] = useState<Movie[]>([])
   const [totalResults, setTotalResults] = useState(0)
@@ -37,6 +57,33 @@ function App() {
       return
     }
 
+    if (hasIncompleteYearFilters(filters)) {
+      setSuggestions([])
+      setIsSuggestionsRequestInFlight(false)
+      return
+    }
+
+    setMovies([])
+    setSuggestions([])
+    setTotalResults(0)
+    setStatus('loading')
+    setErrorMessage('')
+    setIsSuggestionsRequestInFlight(true)
+  }
+
+  const handleFiltersChange = (nextFilters: SearchFilters) => {
+    setFilters(nextFilters)
+
+    if (!searchQuery) {
+      return
+    }
+
+    if (hasIncompleteYearFilters(nextFilters)) {
+      setSuggestions([])
+      setIsSuggestionsRequestInFlight(false)
+      return
+    }
+
     setMovies([])
     setSuggestions([])
     setTotalResults(0)
@@ -48,7 +95,7 @@ function App() {
   useEffect(() => {
     const abortController = new AbortController()
 
-    if (!debouncedSuggestionsQuery) {
+    if (!debouncedSuggestionsQuery || hasIncompleteYearFilters(filters)) {
       return
     }
 
@@ -56,6 +103,7 @@ function App() {
       try {
         const nextSuggestions = await searchMovieSuggestions(
           debouncedSuggestionsQuery,
+          filters,
           abortController.signal,
         )
 
@@ -78,12 +126,12 @@ function App() {
     return () => {
       abortController.abort()
     }
-  }, [debouncedSuggestionsQuery])
+  }, [debouncedSuggestionsQuery, filters])
 
   useEffect(() => {
     const abortController = new AbortController()
 
-    if (!debouncedSearchQuery) {
+    if (!debouncedSearchQuery || hasIncompleteYearFilters(filters)) {
       return
     }
 
@@ -91,6 +139,7 @@ function App() {
       try {
         const result = await searchMovies(
           debouncedSearchQuery,
+          filters,
           abortController.signal,
         )
 
@@ -114,7 +163,7 @@ function App() {
     return () => {
       abortController.abort()
     }
-  }, [debouncedSearchQuery])
+  }, [debouncedSearchQuery, filters])
 
   return (
     <main className={styles.container}>
@@ -130,13 +179,16 @@ function App() {
         isLoading={status === 'loading'}
         suggestions={suggestions}
         isSuggestionsLoading={isSuggestionsLoading}
+        filters={filters}
         onQueryChange={handleQueryChange}
         onSuggestionSelect={handleQueryChange}
+        onFiltersChange={handleFiltersChange}
       />
 
       <MovieResults
         movies={movies}
         query={query}
+        filters={filters}
         status={status}
         totalResults={totalResults}
         errorMessage={errorMessage}

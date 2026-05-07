@@ -1,4 +1,4 @@
-import type { Movie, SearchStatus } from '../types/movie'
+import type { Movie, SearchFilters, SearchStatus } from '../types/movie'
 import MovieCard from './MovieCard'
 import styles from './MovieResults.module.css'
 
@@ -7,6 +7,7 @@ const SKELETON_CARDS_COUNT = 6
 type MovieResultsProps = {
   movies: Movie[]
   query: string
+  filters: SearchFilters
   status: SearchStatus
   totalResults: number
   errorMessage: string
@@ -15,10 +16,19 @@ type MovieResultsProps = {
 function MovieResults({
   movies,
   query,
+  filters,
   status,
   totalResults,
   errorMessage,
 }: MovieResultsProps) {
+  const hasActiveFilters = Boolean(
+    filters.primaryReleaseYear ||
+      filters.year ||
+      filters.region ||
+      filters.includeAdult ||
+      filters.language !== 'en-US',
+  )
+
   return (
     <section className={styles.resultsSection}>
       <div className={styles.resultsHeader}>
@@ -50,7 +60,7 @@ function MovieResults({
         </div>
       ) : null}
 
-      {status === 'idle' ? (
+      {status === 'idle' && !query.trim() ? (
         <div className={styles.emptyState}>
           <h3>Search for a movie</h3>
           <p>Type a title above to load matching movies from TMDB.</p>
@@ -61,7 +71,10 @@ function MovieResults({
         <div className={styles.emptyState}>
           <h3>No movies found</h3>
           <p>
-            No results matched <strong>{query}</strong>. Try another movie title.
+            No results matched <strong>{query}</strong>
+            {hasActiveFilters ? ' with the current filters.' : '.'}{' '}
+            Try another movie title
+            {hasActiveFilters ? ' or adjust the filters.' : '.'}
           </p>
         </div>
       ) : null}

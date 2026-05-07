@@ -8,4 +8,12 @@ export type Movie = {
   genres: string[]
 }
 
+export type SearchFilters = {
+  language: string
+  primaryReleaseYear: string
+  year: string
+  region: string
+  includeAdult: boolean
+}
+
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'error'
