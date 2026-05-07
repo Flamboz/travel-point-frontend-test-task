@@ -50,7 +50,19 @@ type SearchMoviesResponse = {
   total_pages: number
 }
 
+type SearchMoviesResult = {
+  movies: Movie[]
+  totalResults: number
+  totalPages: number
+}
+
 let genreLookupPromise: Promise<Map<number, string>> | null = null
+
+function throwIfAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new DOMException('The operation was aborted.', 'AbortError')
+  }
+}
 
 function isValidYear(value: string): boolean {
   return /^\d{4}$/.test(value)
@@ -124,11 +136,7 @@ async function fetchMappedMovies(
   filters: SearchFilters,
   page: number,
   signal?: AbortSignal,
-): Promise<{
-  movies: Movie[]
-  totalResults: number
-  totalPages: number
-}> {
+): Promise<SearchMoviesResult> {
   const searchParams = new URLSearchParams({
     api_key: TMDB_API_KEY,
     query,
@@ -173,11 +181,7 @@ export async function searchMovies(
   filters: SearchFilters,
   page = 1,
   signal?: AbortSignal,
-): Promise<{
-  movies: Movie[]
-  totalResults: number
-  totalPages: number
-}> {
+): Promise<SearchMoviesResult> {
   const trimmedQuery = query.trim()
 
   if (!trimmedQuery) {
@@ -188,7 +192,13 @@ export async function searchMovies(
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  return fetchMappedMovies(trimmedQuery, filters, page, signal)
+  throwIfAborted(signal)
+
+  const result = await fetchMappedMovies(trimmedQuery, filters, page, signal)
+
+  throwIfAborted(signal)
+
+  return result
 }
 
 export async function searchMovieSuggestions(
@@ -206,7 +216,7 @@ export async function searchMovieSuggestions(
     throw new Error('Missing VITE_TMDB_API_KEY environment variable.')
   }
 
-  const { movies } = await fetchMappedMovies(trimmedQuery, filters, 1, signal)
+  const { movies } = await searchMovies(trimmedQuery, filters, 1, signal)
 
   return movies.slice(0, 5)
 }
@@ -224,6 +234,8 @@ export async function getMovieDetails(
     language: 'en-US',
   })
 
+  throwIfAborted(signal)
+
   const response = await fetch(
     `${TMDB_BASE_URL}/movie/${movieId}?${searchParams.toString()}`,
     { signal },
@@ -234,6 +246,8 @@ export async function getMovieDetails(
   }
 
   const data = (await response.json()) as TmdbMovieDetailsResponse
+
+  throwIfAborted(signal)
 
   return mapMovieDetails(data)
 }

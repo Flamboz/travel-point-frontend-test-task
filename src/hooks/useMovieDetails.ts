@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getMovieDetails } from '../services/tmdb'
 import type { MovieDetails } from '../types/movie'
 
@@ -8,19 +8,19 @@ function useMovieDetails() {
   const [isMovieDetailsLoading, setIsMovieDetailsLoading] = useState(false)
   const [movieDetailsError, setMovieDetailsError] = useState('')
 
-  const handleMovieOpen = (movieId: number) => {
+  const handleMovieOpen = useCallback((movieId: number) => {
     setSelectedMovie(null)
     setIsMovieDetailsLoading(true)
     setMovieDetailsError('')
     setSelectedMovieId(movieId)
-  }
+  }, [])
 
-  const handleMovieClose = () => {
+  const handleMovieClose = useCallback(() => {
     setSelectedMovieId(null)
     setSelectedMovie(null)
     setMovieDetailsError('')
     setIsMovieDetailsLoading(false)
-  }
+  }, [])
 
   useEffect(() => {
     if (!selectedMovieId) {
@@ -84,7 +84,7 @@ function useMovieDetails() {
       document.body.style.paddingRight = paddingRight
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedMovieId])
+  }, [handleMovieClose, selectedMovieId])
 
   return {
     selectedMovieId,

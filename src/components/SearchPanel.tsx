@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react'
+import { memo, useState, type ChangeEvent } from 'react'
 import { TMDB_IMAGE_BASE_URL } from '../services/tmdb'
 import type { Movie, SearchFilters } from '../types/movie'
 import styles from './SearchPanel.module.css'
@@ -312,4 +312,4 @@ function SearchPanel({
   )
 }
 
-export default SearchPanel
+export default memo(SearchPanel)

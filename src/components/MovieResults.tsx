@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Movie, SearchFilters, SearchStatus } from '../types/movie'
 import MovieCard from './MovieCard'
 import styles from './MovieResults.module.css'
@@ -37,9 +38,12 @@ function MovieResults({
       filters.language !== 'en-US',
   )
   const canPaginate = status === 'success' && totalPages > 1
+  const isInitialLoading = status === 'loading' && movies.length === 0
+  const shouldShowResults =
+    (status === 'success' || status === 'loading') && movies.length > 0
 
   return (
-    <section className={styles.resultsSection}>
+    <section className={styles.resultsSection} aria-busy={status === 'loading'}>
       <div className={styles.resultsHeader}>
         <h2 className={styles.resultsTitle}>Search Results</h2>
         <div className={styles.resultsMeta}>
@@ -52,7 +56,7 @@ function MovieResults({
         </div>
       </div>
 
-      {status === 'loading' ? (
+      {isInitialLoading ? (
         <div className={styles.skeletonGrid} aria-hidden="true">
           {Array.from({ length: SKELETON_CARDS_COUNT }).map((_, index) => (
             <article key={index} className={styles.skeletonCard}>
@@ -95,7 +99,7 @@ function MovieResults({
         </div>
       ) : null}
 
-      {status === 'success' && movies.length > 0 ? (
+      {shouldShowResults ? (
         <>
           <div className={styles.moviesGrid}>
             {movies.map((movie) => (
@@ -134,4 +138,4 @@ function MovieResults({
   )
 }
 
-export default MovieResults
+export default memo(MovieResults)

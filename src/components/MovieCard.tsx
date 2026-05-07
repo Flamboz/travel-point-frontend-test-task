@@ -33,6 +33,8 @@ function MovieCard({ movie, onOpen }: MovieCardProps) {
               }`}
               src={posterSrc}
               alt={movie.title}
+              loading="lazy"
+              decoding="async"
               onLoad={() => setLoadedPosterSrc(posterSrc)}
               onError={() => setLoadedPosterSrc(posterSrc)}
             />

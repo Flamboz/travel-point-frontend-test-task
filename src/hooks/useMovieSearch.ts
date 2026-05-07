@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   searchMovies,
   searchMovieSuggestions,
@@ -53,76 +53,79 @@ function useMovieSearch({ addRecentSearch }: UseMovieSearchParams) {
     searchQuery.length > 0 &&
     (debouncedSuggestionsQuery !== searchQuery || isSuggestionsRequestInFlight)
 
-  const handleQueryChange = (value: string) => {
-    const trimmedValue = value.trim()
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      const trimmedValue = value.trim()
 
-    setQuery(value)
-    setCurrentPage(1)
+      setQuery(value)
+      setCurrentPage(1)
 
-    if (!trimmedValue) {
-      setMovies([])
+      if (!trimmedValue) {
+        setMovies([])
+        setSuggestions([])
+        setTotalResults(0)
+        setTotalPages(0)
+        setStatus('idle')
+        setErrorMessage('')
+        setIsSuggestionsRequestInFlight(false)
+        return
+      }
+
+      if (hasIncompleteYearFilters(filters)) {
+        setSuggestions([])
+        setIsSuggestionsRequestInFlight(false)
+        return
+      }
+
       setSuggestions([])
-      setTotalResults(0)
-      setTotalPages(0)
-      setStatus('idle')
+      setStatus('loading')
       setErrorMessage('')
-      setIsSuggestionsRequestInFlight(false)
-      return
-    }
+      setIsSuggestionsRequestInFlight(true)
+    },
+    [filters],
+  )
 
-    if (hasIncompleteYearFilters(filters)) {
+  const handleFiltersChange = useCallback(
+    (nextFilters: SearchFilters) => {
+      setFilters(nextFilters)
+      setCurrentPage(1)
+
+      if (!searchQuery) {
+        return
+      }
+
+      if (hasIncompleteYearFilters(nextFilters)) {
+        setSuggestions([])
+        setIsSuggestionsRequestInFlight(false)
+        return
+      }
+
       setSuggestions([])
-      setIsSuggestionsRequestInFlight(false)
-      return
-    }
+      setStatus('loading')
+      setErrorMessage('')
+      setIsSuggestionsRequestInFlight(true)
+    },
+    [searchQuery],
+  )
 
-    setMovies([])
-    setSuggestions([])
-    setTotalResults(0)
-    setTotalPages(0)
-    setStatus('loading')
-    setErrorMessage('')
-    setIsSuggestionsRequestInFlight(true)
-  }
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (
+        page === currentPage ||
+        page < 1 ||
+        (totalPages > 0 && page > totalPages) ||
+        !searchQuery ||
+        hasIncompleteYearFilters(filters)
+      ) {
+        return
+      }
 
-  const handleFiltersChange = (nextFilters: SearchFilters) => {
-    setFilters(nextFilters)
-    setCurrentPage(1)
-
-    if (!searchQuery) {
-      return
-    }
-
-    if (hasIncompleteYearFilters(nextFilters)) {
-      setSuggestions([])
-      setIsSuggestionsRequestInFlight(false)
-      return
-    }
-
-    setMovies([])
-    setSuggestions([])
-    setTotalResults(0)
-    setTotalPages(0)
-    setStatus('loading')
-    setErrorMessage('')
-    setIsSuggestionsRequestInFlight(true)
-  }
-
-  const handlePageChange = (page: number) => {
-    if (
-      page === currentPage ||
-      page < 1 ||
-      (totalPages > 0 && page > totalPages) ||
-      !searchQuery ||
-      hasIncompleteYearFilters(filters)
-    ) {
-      return
-    }
-
-    setCurrentPage(page)
-    setStatus('loading')
-    setErrorMessage('')
-  }
+      setCurrentPage(page)
+      setStatus('loading')
+      setErrorMessage('')
+    },
+    [currentPage, filters, searchQuery, totalPages],
+  )
 
   useEffect(() => {
     const abortController = new AbortController()

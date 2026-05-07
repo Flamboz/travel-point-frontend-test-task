@@ -1,11 +1,14 @@
+import { lazy, useCallback } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
-import MovieDetailsModal from './components/MovieDetailsPage'
 import MovieResults from './components/MovieResults'
 import SearchPanel from './components/SearchPanel'
 import styles from './App.module.css'
 import useMovieDetails from './hooks/useMovieDetails'
 import useMovieSearch from './hooks/useMovieSearch'
 import useRecentSearches from './hooks/useRecentSearches'
+import type { Movie } from './types/movie'
+
+const MovieDetailsModal = lazy(() => import('./components/MovieDetailsPage'))
 
 function App() {
   const { recentSearches, addRecentSearch, clearRecentSearches } =
@@ -34,6 +37,15 @@ function App() {
     handleMovieClose,
   } = useMovieDetails()
 
+  const handleSuggestionSelect = useCallback(
+    (movie: Movie) => {
+      addRecentSearch(movie.title)
+      handleQueryChange(movie.title)
+      handleMovieOpen(movie.id)
+    },
+    [addRecentSearch, handleMovieOpen, handleQueryChange],
+  )
+
   return (
     <main className={styles.container}>
       <header className={styles.header}>
@@ -53,11 +65,7 @@ function App() {
         onQueryChange={handleQueryChange}
         onRecentSearchSelect={handleQueryChange}
         onRecentSearchesClear={clearRecentSearches}
-        onSuggestionSelect={(movie) => {
-          addRecentSearch(movie.title)
-          handleQueryChange(movie.title)
-          handleMovieOpen(movie.id)
-        }}
+        onSuggestionSelect={handleSuggestionSelect}
         onFiltersChange={handleFiltersChange}
       />
 
@@ -81,13 +89,13 @@ function App() {
           actionLabel="Close dialog"
           onAction={handleMovieClose}
         >
-          <MovieDetailsModal
-            key={selectedMovieId}
-            movie={selectedMovie}
-            isLoading={isMovieDetailsLoading}
-            errorMessage={movieDetailsError}
-            onClose={handleMovieClose}
-          />
+            <MovieDetailsModal
+              key={selectedMovieId}
+              movie={selectedMovie}
+              isLoading={isMovieDetailsLoading}
+              errorMessage={movieDetailsError}
+              onClose={handleMovieClose}
+            />
         </ErrorBoundary>
       ) : null}
     </main>
