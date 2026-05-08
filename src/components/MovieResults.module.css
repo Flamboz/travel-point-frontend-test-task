@@ -53,7 +53,6 @@
   justify-content: center;
   gap: 1rem;
   margin-top: 2rem;
-  flex-wrap: wrap;
 }
 
 .paginationButton {
@@ -202,5 +201,21 @@
   .moviesGrid,
   .skeletonGrid {
     grid-template-columns: 1fr;
+  }
+
+  .pagination {
+    gap: 0.75rem;
+  }
+
+  .paginationButton {
+    min-width: 90px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .paginationInfo {
+    width: 100%;
+    text-align: center;
+    font-size: 0.95rem;
   }
 }
