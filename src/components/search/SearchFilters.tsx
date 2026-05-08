@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react'
-import type { SearchFilters as SearchFiltersType } from '../types/movie'
+import type { SearchFilters as SearchFiltersType } from '../../types/movie'
 import styles from './SearchPanel.module.css'
 
 const LANGUAGE_OPTIONS = [

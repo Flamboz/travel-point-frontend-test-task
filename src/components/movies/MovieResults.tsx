@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef } from 'react'
-import type { Movie, SearchFilters, SearchStatus } from '../types/movie'
+import type { Movie, SearchFilters, SearchStatus } from '../../types/movie'
 import MovieCard from './MovieCard'
 import styles from './MovieResults.module.css'
 

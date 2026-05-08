@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { TMDB_IMAGE_BASE_URL } from '../services/tmdb'
-import type { Movie } from '../types/movie'
+import { TMDB_IMAGE_BASE_URL } from '../../services/tmdb'
+import type { Movie } from '../../types/movie'
 import styles from './MovieCard.module.css'
 
 type MovieCardProps = {

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MovieResults from './MovieResults'
-import { createMovie, defaultFilters } from '../test/fixtures'
+import { createMovie, defaultFilters } from '../../test/fixtures'
 
 describe('MovieResults', () => {
   it('renders the idle empty state before a search starts', () => {

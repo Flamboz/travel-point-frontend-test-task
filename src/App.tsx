@@ -1,14 +1,14 @@
 import { lazy, useCallback } from 'react'
-import ErrorBoundary from './components/ErrorBoundary'
-import MovieResults from './components/MovieResults'
-import SearchPanel from './components/SearchPanel'
+import ErrorBoundary from './components/shared/ErrorBoundary'
+import MovieResults from './components/movies/MovieResults'
+import SearchPanel from './components/search/SearchPanel'
 import styles from './App.module.css'
 import useMovieDetails from './hooks/useMovieDetails'
 import useMovieSearch from './hooks/useMovieSearch'
 import useRecentSearches from './hooks/useRecentSearches'
 import type { Movie } from './types/movie'
 
-const MovieDetailsModal = lazy(() => import('./components/MovieDetailsPage'))
+const MovieDetailsModal = lazy(() => import('./components/movies/MovieDetailsPage'))
 
 function App() {
   const { recentSearches, addRecentSearch, clearRecentSearches } =

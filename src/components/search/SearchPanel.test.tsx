@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SearchPanel from './SearchPanel'
-import type { SearchFilters } from '../types/movie'
-import { createMovie, defaultFilters } from '../test/fixtures'
+import type { SearchFilters } from '../../types/movie'
+import { createMovie, defaultFilters } from '../../test/fixtures'
 
 function ControlledFiltersSearchPanel({
   onFiltersChange,

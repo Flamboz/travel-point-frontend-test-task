@@ -1,7 +1,7 @@
-import useMovieMediaState from '../hooks/useMovieMediaState'
-import type { MovieDetails } from '../types/movie'
-import { formatList } from '../utils/movieFormatters'
-import { getMovieDetailsViewModel } from '../utils/movieDetailsViewModel'
+import useMovieMediaState from '../../hooks/useMovieMediaState'
+import type { MovieDetails } from '../../types/movie'
+import { formatList } from '../../utils/movieFormatters'
+import { getMovieDetailsViewModel } from '../../utils/movieDetailsViewModel'
 import styles from './MovieDetailsPage.module.css'
 
 type MovieDetailsModalProps = {

@@ -2,7 +2,7 @@ import { memo, useState } from 'react'
 import RecentSearches from './RecentSearches'
 import SearchFilters from './SearchFilters'
 import SearchSuggestions from './SearchSuggestions'
-import type { Movie, SearchFilters as SearchFiltersType } from '../types/movie'
+import type { Movie, SearchFilters as SearchFiltersType } from '../../types/movie'
 import styles from './SearchPanel.module.css'
 
 type SearchPanelProps = {
