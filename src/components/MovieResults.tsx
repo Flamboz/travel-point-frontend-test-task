@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import type { Movie, SearchFilters, SearchStatus } from '../types/movie'
 import MovieCard from './MovieCard'
 import styles from './MovieResults.module.css'
@@ -30,6 +30,7 @@ function MovieResults({
   onMovieOpen,
   onPageChange,
 }: MovieResultsProps) {
+  const sectionRef = useRef<HTMLElement | null>(null)
   const hasActiveFilters = Boolean(
     filters.primaryReleaseYear ||
       filters.year ||
@@ -41,9 +42,23 @@ function MovieResults({
   const isInitialLoading = status === 'loading' && movies.length === 0
   const shouldShowResults =
     (status === 'success' || status === 'loading') && movies.length > 0
+  const handlePaginationChange = useCallback(
+    (page: number) => {
+      sectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+      onPageChange(page)
+    },
+    [onPageChange],
+  )
 
   return (
-    <section className={styles.resultsSection} aria-busy={status === 'loading'}>
+    <section
+      ref={sectionRef}
+      className={styles.resultsSection}
+      aria-busy={status === 'loading'}
+    >
       <div className={styles.resultsHeader}>
         <h2 className={styles.resultsTitle}>Search Results</h2>
         <div className={styles.resultsMeta}>
@@ -112,7 +127,7 @@ function MovieResults({
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => onPageChange(currentPage - 1)}
+                onClick={() => handlePaginationChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 Previous
@@ -125,7 +140,7 @@ function MovieResults({
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => onPageChange(currentPage + 1)}
+                onClick={() => handlePaginationChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
               >
                 Next
