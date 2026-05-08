@@ -62,6 +62,7 @@ describe('SearchFilters', () => {
     })
     expect(handleFiltersChange).toHaveBeenLastCalledWith({
       ...defaultFilters,
+      primaryReleaseYear: '2024',
       language: 'fr-FR',
     })
   })

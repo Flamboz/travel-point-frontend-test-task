@@ -153,10 +153,9 @@ describe('SearchPanel', () => {
     expect(screen.getByRole('button', { name: 'Avatar' })).toBeInTheDocument()
   })
 
-  it('delegates recent search selection and clear actions', async () => {
+  it('delegates recent search selection', async () => {
     const user = userEvent.setup()
     const handleRecentSearchSelect = vi.fn()
-    const handleRecentSearchesClear = vi.fn()
 
     render(
       <SearchPanel
@@ -168,7 +167,7 @@ describe('SearchPanel', () => {
         recentSearches={['Avatar']}
         onQueryChange={vi.fn()}
         onRecentSearchSelect={handleRecentSearchSelect}
-        onRecentSearchesClear={handleRecentSearchesClear}
+        onRecentSearchesClear={vi.fn()}
         onSuggestionSelect={vi.fn()}
         onFiltersChange={vi.fn()}
       />,
@@ -176,9 +175,33 @@ describe('SearchPanel', () => {
 
     await user.click(screen.getByLabelText('Search for movies'))
     await user.click(screen.getByRole('button', { name: 'Avatar' }))
-    await user.click(screen.getByRole('button', { name: 'Clear' }))
 
     expect(handleRecentSearchSelect).toHaveBeenCalledWith('Avatar')
+  })
+
+  it('delegates recent search clearing', async () => {
+    const user = userEvent.setup()
+    const handleRecentSearchesClear = vi.fn()
+
+    render(
+      <SearchPanel
+        query=""
+        isLoading={false}
+        suggestions={[]}
+        isSuggestionsLoading={false}
+        filters={defaultFilters}
+        recentSearches={['Avatar']}
+        onQueryChange={vi.fn()}
+        onRecentSearchSelect={vi.fn()}
+        onRecentSearchesClear={handleRecentSearchesClear}
+        onSuggestionSelect={vi.fn()}
+        onFiltersChange={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByLabelText('Search for movies'))
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
+
     expect(handleRecentSearchesClear).toHaveBeenCalledTimes(1)
   })
 })
