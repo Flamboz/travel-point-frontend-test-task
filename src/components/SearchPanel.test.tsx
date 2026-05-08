@@ -76,6 +76,38 @@ describe('SearchPanel', () => {
     expect(props.onSuggestionSelect).toHaveBeenCalledWith(suggestion)
   })
 
+  it('hides the suggestions dropdown after selecting a suggestion', async () => {
+    const user = userEvent.setup()
+    const suggestion = createMovie()
+
+    render(
+      <SearchPanel
+        query="avatar"
+        isLoading={false}
+        suggestions={[suggestion]}
+        isSuggestionsLoading={false}
+        filters={defaultFilters}
+        recentSearches={[]}
+        onQueryChange={vi.fn()}
+        onRecentSearchSelect={vi.fn()}
+        onRecentSearchesClear={vi.fn()}
+        onSuggestionSelect={vi.fn()}
+        onFiltersChange={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByLabelText('Search for movies'))
+    expect(
+      screen.getByRole('listbox', { name: 'Movie suggestions' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /avatar/i }))
+
+    expect(
+      screen.queryByRole('listbox', { name: 'Movie suggestions' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('sanitizes year input and propagates filter updates', async () => {
     const user = userEvent.setup()
     const handleFiltersChange = vi.fn()
@@ -119,5 +151,34 @@ describe('SearchPanel', () => {
 
     expect(screen.getByText('Recent searches')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Avatar' })).toBeInTheDocument()
+  })
+
+  it('delegates recent search selection and clear actions', async () => {
+    const user = userEvent.setup()
+    const handleRecentSearchSelect = vi.fn()
+    const handleRecentSearchesClear = vi.fn()
+
+    render(
+      <SearchPanel
+        query=""
+        isLoading={false}
+        suggestions={[]}
+        isSuggestionsLoading={false}
+        filters={defaultFilters}
+        recentSearches={['Avatar']}
+        onQueryChange={vi.fn()}
+        onRecentSearchSelect={handleRecentSearchSelect}
+        onRecentSearchesClear={handleRecentSearchesClear}
+        onSuggestionSelect={vi.fn()}
+        onFiltersChange={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByLabelText('Search for movies'))
+    await user.click(screen.getByRole('button', { name: 'Avatar' }))
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
+
+    expect(handleRecentSearchSelect).toHaveBeenCalledWith('Avatar')
+    expect(handleRecentSearchesClear).toHaveBeenCalledTimes(1)
   })
 })
